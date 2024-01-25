@@ -1,73 +1,72 @@
-const STATE = {
-  PENDING: 'pending',
-  FULFILLED: 'fulfilled',
-  REJECTED: 'rejected',
+const airports = 'PHX BKK OKC JFK LAX MEX EZE HEL LOS LAP LIM'.split(' ')
+
+const routes = [
+  ['PHX', 'LAX'],
+  ['PHX', 'JFK'],
+  ['JFK', 'OKC'],
+  ['JFK', 'HEL'],
+  ['JFK', 'LOS'],
+  ['MEX', 'LAX'],
+  ['MEX', 'BKK'],
+  ['MEX', 'LIM'],
+  ['MEX', 'EZE'],
+  ['LIM', 'BKK'],
+]
+
+const adjacencyList = new Map()
+
+function addNode(airport) {
+  adjacencyList.set(airport, [])
 }
 
-class MyPromise {
-  #thenCbs = []
-  #catchCbs = []
-  #state = STATE.PENDING
-  #value
-  #onSuccessBind = this.#onSuccess.bind(this)
-  #onFailBind = this.#onFail.bind(this)
-  constructor(cb) {
-    try {
-      cb(this.#onSuccessBind, this.#onFailBind)
-    } catch (e) {
-      this.#onFail(e)
-    }
-  }
+function addEdge(origin, destination) {
+  adjacencyList.get(origin).push(destination)
+  adjacencyList.get(destination).push(origin)
+}
 
-  #runCallbacks() {
-    if (this.#state === STATE.FULFILLED) {
-      this.#thenCbs.forEach((cb) => {
-        cb(this.#value)
-      })
+airports.forEach(addNode)
+routes.forEach((route) => addEdge(...route))
 
-      this.#thenCbs = []
-    }
+function bfs(start, end) {
+  const visited = new Set()
+  const queue = [start]
 
-    if (this.#state === STATE.REJECTED) {
-      this.#catchCbs.forEach((cb) => {
-        cb(this.#value)
-      })
+  while (queue.length > 0) {
+    const airport = queue.shift()
+    const destinations = adjacencyList.get(airport)
 
-      this.#catchCbs = []
-    }
-  }
-
-  #onSuccess(value) {
-    if (this.#state !== STATE.PENDING) return
-    this.#value = value
-    this.#state = STATE.FULFILLED
-  }
-
-  #onFail(value) {
-    if (this.#state !== STATE.PENDING) return
-    this.#value = value
-    this.#state = STATE.REJECTED
-  }
-
-  then(thenCb, catchCb) {
-    return new MyPromise((resolve, reject) => {
-      if (thenCb != null) {
-        this.#thenCbs.push(thenCb)
+    for (const destination of destinations) {
+      if (destination === end) {
+        console.log('found it')
       }
-      if (catchCb != null) {
-        this.#catchCbs.push(catchCb)
+
+      if (!visited.has(destination)) {
+        visited.add(destination)
+        queue.push(destination)
+        console.log(destination)
       }
-      this.#runCallbacks()
-    })
-  }
-
-  catch(cb) {
-    this.then(undefined, cb)
-  }
-
-  finally(cb) {
-    this.then(cb, cb)
+    }
   }
 }
 
-module.exports = MyPromise
+// bfs('PHX', 'BKK')
+
+function dfs(start, end, visited = new Set()) {
+  console.log(start)
+  visited.add(start)
+
+  const destinations = adjacencyList.get(start)
+
+  for (const destination of destinations) {
+    if (destination === end) {
+      console.log(`found it in ${visited.size} steps!`)
+      return
+    }
+
+    if (!visited.has(destination)) {
+      dfs(destination, end, visited)
+    }
+  }
+}
+
+dfs('PHX', 'BKK')
